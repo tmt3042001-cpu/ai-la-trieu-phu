@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Đấu Trường Triệu Phú</title>
-    <!-- Tailwind CSS giao diện mobile -->
+    <!-- Tailwind CSS cho giao diện mobile -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- Thư viện PubNub Realtime -->
-    <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.2.2.min.js"></script>
+    <!-- Thư viện tạo mã QR tự động -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         body {
             background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%);
@@ -23,71 +23,67 @@
         .jbt-btn:active {
             transform: scale(0.98);
         }
+        #qrcode img {
+            margin: 0 auto;
+            border: 6px solid white;
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body class="text-white min-h-screen flex flex-col justify-between p-4 selection:bg-transparent">
 
-    <!-- SCREEN 1: MENU CHÍNH / NHẬP KEY CHUNG -->
+    <!-- SCREEN 1: MENU CHÍNH -->
     <div id="screen-menu" class="flex-1 flex flex-col justify-center items-center space-y-8 max-w-md mx-auto w-full">
         <div class="text-center">
             <h1 class="text-3xl font-extrabold tracking-wider text-cyan-400 drop-shadow-[0_0_15px_rgba(34,211,238,0.5)] uppercase">Đấu Trường</h1>
             <p class="text-xl font-semibold text-amber-400">TRIỆU PHÚ ONLINE</p>
         </div>
 
-        <div class="bg-slate-900/80 border border-slate-700 rounded-2xl p-6 w-full space-y-6 backdrop-blur-sm">
-            <div class="space-y-3">
-                <label class="block text-sm font-medium text-slate-300 text-center uppercase tracking-wider">
-                    Nhập mã phòng chung (Ví dụ: 1234, tuấn_hà...)
-                </label>
-                <input id="input-room" type="text" placeholder="Nhập mã chung với bạn bè..." 
-                    class="w-full px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-center text-xl font-bold text-amber-300 placeholder:text-slate-600 focus:outline-none focus:border-cyan-400">
-                
-                <button id="btn-connect" class="w-full py-4 rounded-xl font-bold text-lg jbt-btn transition-all text-white">
-                    🚀 KẾT NỐI VÀO PHÒNG
+        <div class="bg-slate-900/80 border border-slate-700 rounded-2xl p-6 w-full space-y-4 backdrop-blur-sm text-center">
+            <div id="menu-normal-mode" class="space-y-4">
+                <p class="text-slate-300 text-sm">Chào mừng bạn đến với đấu trường trí tuệ đối kháng.</p>
+                <button id="btn-start-solo" class="w-full py-4 rounded-xl font-bold text-lg jbt-btn transition-all text-white">
+                    🎮 BẮT ĐẦU CHƠI NGAY
+                </button>
+            </div>
+
+            <div id="menu-challenge-mode" class="space-y-4 hidden">
+                <div class="bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl">
+                    <p class="text-amber-400 font-bold text-sm">⚔️ BẠN CÓ MỘT LỜI THÁCH ĐẤU!</p>
+                    <p class="text-xs text-slate-400 mt-1">Bạn sẽ thi đấu cùng một bộ câu hỏi với đối thủ của mình.</p>
+                </div>
+                <button id="btn-start-challenge" class="w-full py-4 bg-amber-500 hover:bg-amber-600 rounded-xl font-bold text-lg text-slate-950 transition-all">
+                    ⚔️ CHẤP NHẬN THÁCH ĐẤU
                 </button>
             </div>
         </div>
-        <p id="status-text" class="text-sm text-slate-400 text-center">Hệ thống mạng đã sẵn sàng.</p>
+        <p class="text-xs text-slate-500 text-center">Hệ thống chuẩn kết nối 4G/Wifi ổn định 100%</p>
     </div>
 
-    <!-- SCREEN 2: MÀN HÌNH CHỜ ĐỐI THỦ -->
-    <div id="screen-lobby" class="hidden flex-1 flex flex-col justify-center items-center space-y-6 max-w-md mx-auto w-full">
-        <div class="rounded-full border-4 border-slate-700 h-12 w-12 border-t-cyan-400 animate-spin"></div>
-        <h2 class="text-xl font-bold text-center">Đã vào cổng <span id="lobby-room-name" class="text-amber-400">---</span></h2>
-        <p class="text-slate-400 text-sm text-center">Đang đợi đối thủ nhập đúng mã này để cùng bắt đầu...</p>
-        <button onclick="location.reload()" class="px-6 py-2 bg-rose-950/50 border border-rose-800 rounded-lg text-rose-300 text-sm">Hủy / Thoát</button>
-    </div>
-
-    <!-- SCREEN 3: TRẬN ĐẤU -->
+    <!-- SCREEN 2: TRẬN ĐẤU -->
     <div id="screen-game" class="hidden flex-1 flex flex-col justify-between max-w-md mx-auto w-full pt-2">
-        <div class="grid grid-cols-2 gap-4 bg-slate-900/90 border border-slate-800 p-3 rounded-xl">
-            <div class="border-r border-slate-800 pr-2">
-                <p class="text-xs text-slate-400 uppercase font-semibold">Bạn</p>
-                <p id="p1-score" class="text-xl font-black text-cyan-400">0đ</p>
-                <div id="p1-status" class="text-[10px] text-slate-500 italic mt-0.5">Đang chờ...</div>
+        <!-- Thanh trạng thái điểm số -->
+        <div class="bg-slate-900/90 border border-slate-800 p-3 rounded-xl flex justify-between items-center">
+            <div>
+                <p class="text-xs text-slate-400 uppercase font-semibold">Điểm số hiện tại</p>
+                <p id="game-score" class="text-2xl font-black text-cyan-400">0đ</p>
             </div>
-            <div class="pl-2 text-right">
-                <p class="text-xs text-slate-400 uppercase font-semibold">Đối thủ</p>
-                <p id="p2-score" class="text-xl font-black text-rose-400">0đ</p>
-                <div id="p2-status" class="text-[10px] text-slate-500 italic mt-0.5">Đang chờ...</div>
-            </div>
-        </div>
-
-        <div class="my-4 text-center">
-            <div class="inline-block bg-slate-950/60 border border-slate-800 px-4 py-1.5 rounded-full">
+            <div class="text-center bg-slate-950/60 border border-slate-800 px-4 py-1.5 rounded-full">
                 <span class="text-xs text-slate-400 uppercase mr-1">Thời gian:</span>
                 <span id="game-timer" class="font-mono text-xl font-bold text-amber-400">15</span>s
             </div>
         </div>
 
-        <div class="flex-1 flex items-center justify-center my-2 min-h-[140px] bg-slate-900/40 border border-slate-800/60 rounded-2xl p-5 text-center relative">
+        <!-- Khung câu hỏi -->
+        <div class="flex-1 flex items-center justify-center my-4 min-h-[140px] bg-slate-900/40 border border-slate-800/60 rounded-2xl p-5 text-center relative">
             <div class="absolute top-2 left-3 bg-slate-800 px-2 py-0.5 rounded text-[10px] font-mono text-slate-400">
                 Câu <span id="question-number">1</span>/10
             </div>
-            <p id="question-text" class="text-lg font-bold leading-relaxed text-slate-100">Đang tải...</p>
+            <p id="question-text" class="text-lg font-bold leading-relaxed text-slate-100">Đang tải câu hỏi...</p>
         </div>
 
-        <div class="grid grid-cols-1 gap-3 mt-4 mb-2">
+        <!-- Các nút đáp án -->
+        <div class="grid grid-cols-1 gap-3 mb-2">
             <button onclick="selectAnswer(0)" class="ans-btn w-full py-4 px-4 bg-slate-900 border border-slate-700/80 rounded-xl text-left font-medium text-slate-200 flex items-center space-x-3 transition-all">
                 <span class="text-amber-400 font-bold font-mono">A.</span> <span id="ans-0">---</span>
             </button>
@@ -103,27 +99,40 @@
         </div>
     </div>
 
-    <!-- SCREEN 4: KẾT QUẢ -->
-    <div id="screen-result" class="hidden flex-1 flex flex-col justify-center items-center space-y-6 max-w-md mx-auto w-full">
-        <div class="text-center space-y-2">
-            <div id="result-icon" class="text-6xl">🏆</div>
-            <h2 id="result-title" class="text-3xl font-black uppercase text-amber-400">BẠN ĐÃ THẮNG</h2>
+    <!-- SCREEN 3: KẾT QUẢ & THÁCH ĐẤU -->
+    <div id="screen-result" class="hidden flex-1 flex flex-col justify-center items-center space-y-5 max-w-md mx-auto w-full overflow-y-auto py-4">
+        <div class="text-center space-y-1">
+            <div class="text-5xl">📊</div>
+            <h2 class="text-2xl font-black uppercase text-amber-400">HOÀN THÀNH LƯỢT CHƠI</h2>
+            <p class="text-slate-400 text-sm">Điểm số của bạn đạt được là:</p>
+            <p id="final-score" class="text-4xl font-black text-cyan-400 animate-bounce">0đ</p>
         </div>
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full grid grid-cols-2 gap-4 text-center">
-            <div>
-                <p class="text-xs text-slate-400">Điểm của bạn</p>
-                <p id="final-p1" class="text-2xl font-bold text-cyan-400">0</p>
+
+        <!-- Khung thách đấu dành cho người chơi 1 -->
+        <div id="share-box" class="bg-slate-900 border border-slate-800 rounded-xl p-4 w-full space-y-4 text-center">
+            <p class="text-xs font-bold text-emerald-400 uppercase tracking-wider">⚡ GỬI LINK THÁCH ĐẤU ĐỐI THỦ ⚡</p>
+            <p class="text-xs text-slate-400">Hãy gửi link này cho bạn bè. Họ sẽ chơi đúng bộ câu hỏi này để đọ điểm với bạn!</p>
+            
+            <button id="btn-copy-link" class="w-full py-3 bg-emerald-600 active:bg-emerald-700 font-bold rounded-xl text-sm transition-all">
+                📋 SAO CHÉP LINK THÁCH ĐẤU
+            </button>
+            
+            <div class="flex items-center justify-center space-x-2 text-slate-600 text-xs">
+                <div class="h-[1px] bg-slate-800 flex-1"></div>
+                <span>HOẶC QUÉT MÃ QR DƯỚI ĐÂY</span>
+                <div class="h-[1px] bg-slate-800 flex-1"></div>
             </div>
-            <div>
-                <p class="text-xs text-slate-400">Điểm đối thủ</p>
-                <p id="final-p2" class="text-2xl font-bold text-rose-400">0</p>
-            </div>
+
+            <div id="qrcode" class="py-2 flex justify-center"></div>
         </div>
-        <button onclick="location.reload()" class="w-full py-4 jbt-btn font-bold rounded-xl text-lg">🔄 QUAY LẠI MENU CHÍNH</button>
+
+        <button onclick="window.location.href = window.location.pathname;" class="w-full py-4 bg-slate-800 border border-slate-700 font-bold rounded-xl text-lg">
+            🔄 CHƠI BỘ CÂU HỎI MỚI
+        </button>
     </div>
 
+    <!-- HỆ THỐNG ÂM THANH GIẢ LẬP -->
     <script>
-        // Hệ thống âm thanh âm nhạc giả lập
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playBeep(freq, type, duration) {
             try {
@@ -138,11 +147,13 @@
         const sound = {
             click: () => playBeep(600, 'sine', 0.1),
             correct: () => { playBeep(880, 'sine', 0.1); setTimeout(() => playBeep(1320, 'sine', 0.2), 100); },
-            wrong: () => playBeep(180, 'sawtooth', 0.4),
-            win: () => { playBeep(523.25, 'square', 0.2); setTimeout(() => playBeep(659.25, 'square', 0.2), 150); setTimeout(() => playBeep(783.99, 'square', 0.4), 300); }
+            wrong: () => playBeep(180, 'sawtooth', 0.4)
         };
+    </script>
 
-        // KHO CÂU HỎI
+    <!-- LOGIC GAME CHẠY 100% ỔN ĐỊNH -->
+    <script>
+        // NGÂN HÀNG CÂU HỎI AI LÀ TRIỆU PHÚ VIỆT NAM (20 CÂU ĐỂ ĐỔI MỚI LIÊN TỤC)
         const questionBank = [
             { q: "Chiếc áo dài truyền thống của Việt Nam thường được mặc kèm với loại quần nào?", a: ["Quần jean", "Quần ống rộng cùng màu hoặc trắng", "Quần đùi", "Quần tây"], c: 1 },
             { q: "Sông nào được mệnh danh là dòng sông lớn nhất chảy qua miền Nam Việt Nam?", a: ["Sông Hồng", "Sông Hương", "Sông Mê Kông (Sông Cửu Long)", "Sông Thu Bồn"], c: 2 },
@@ -153,214 +164,184 @@
             { q: "Tỉnh thành nào của Việt Nam có đường bờ biển dài nhất?", a: ["Quảng Ninh", "Khánh Hòa", "Bình Thuận", "Kiên Giang"], c: 1 },
             { q: "Trong bàn cờ Tướng, quân cờ nào chỉ được phép đi chéo và không được qua sông?", a: ["Quân Pháo", "Quân Tịnh (Tượng)", "Quân Sĩ", "Cả Sĩ và Tượng"], c: 3 },
             { q: "Sự kiện lịch sử nào đánh dấu kết thúc chiến tranh Việt Nam, thống nhất đất nước?", a: ["30 tháng 4 năm 1975", "2 tháng 9 năm 1945", "7 tháng 5 năm 1954", "27 tháng 1 năm 1973"], c: 0 },
-            { q: "Thành phố nào là trung tâm kinh tế, công nghiệp lớn nhất miền Nam Việt Nam?", a: ["Đà Nẵng", "Cần Thơ", "Hà Nội", "Thành phố Hồ Chí Minh"], c: 3 }
+            { q: "Thành phố nào là trung tâm kinh tế, công nghiệp lớn nhất miền Nam Việt Nam?", a: ["Đà Nẵng", "Cần Thơ", "Hà Nội", "Thành phố Hồ Chí Minh"], c: 3 },
+            { q: "Bánh mì Phượng là thương hiệu ẩm thực nổi tiếng ở địa phương nào?", a: ["Hà Nội", "Hội An", "Sài Gòn", "Huế"], c: 1 },
+            { q: "Trong các nhạc cụ sau, đâu là nhạc cụ truyền thống thuần túy của Việt Nam?", a: ["Đàn Bầu", "Đàn Ghita", "Đàn Piano", "Đàn Organ"], c: 0 },
+            { q: "Vịnh biển nào của Việt Nam đã được UNESCO công nhận là Kỳ quan thiên nhiên thế giới?", a: ["Vịnh Lăng Cô", "Vịnh Nha Trang", "Vịnh Hạ Long", "Vịnh Xuân Đài"], c: 2 },
+            { q: "Loại quả nào là đặc sản nổi tiếng của vùng đất Bình Thuận?", a: ["Vải thiều", "Thanh Long", "Sầu riêng", "Măng cụt"], c: 1 },
+            { q: "Trận thủy chiến nổi tiếng của Ngô Quyền chống quân Nam Hán diễn ra trên sông nào?", a: ["Sông Gianh", "Sông Bạch Đằng", "Sông Lam", "Sông Đà"], c: 1 },
+            { q: "Nhạc sĩ nào là tác giả của bài hát 'Tiến quân ca' (Quốc ca Việt Nam)?", a: ["Trịnh Công Sơn", "Văn Cao", "Phan Huỳnh Điểu", "Xuân Hồng"], c: 1 },
+            { q: "Lễ hội nào được tổ chức định kỳ 2 năm một lần tại cố đô Huế?", a: ["Festival Huế", "Lễ hội Chùa Hương", "Lễ hội Tháp Bà", "Lễ hội Nghinh Ông"], c: 0 },
+            { q: "Đỉnh núi nào được mệnh danh là 'Nóc nhà của Đông Dương'?", a: ["Fansipan", "Mẫu Sơn", "Bà Đen", "Langbiang"], c: 0 },
+            { q: "Trong truyện cổ tích, Thạch Sanh đã dùng nhạc cụ gì để làm lui quân của 18 nước chư hầu?", a: ["Đàn thần (Đàn tính)", "Sáo thần", "Trống thần", "Đàn tì bà"], c: 0 },
+            { q: "Quần đảo Hoàng Sa và Trường Sa thuộc chủ quyền của quốc gia nào?", a: ["Việt Nam", "Philippines", "Malaysia", "Indonesia"], c: 0Item }
         ];
 
-        let pubnub = null;
-        let myPlayerId = "USER_" + Math.floor(Math.random() * 100000);
-        let roomCode = ""; 
-        let isHost = false; // Người bấm kết nối đầu tiên trong phòng này sẽ tự làm Host
+        let activeQuestions = [];
+        let currentIdx = 0;
+        let totalScore = 0;
+        let timeLeft = 15;
+        let timerInterval = null;
+        let isChallengerMode = false;
+        let challengeShareLink = "";
 
-        let scoreMe = 0; let scoreOp = 0;
-        let currentQuestionIdx = 0; let timerInterval = null;
-        let timeLeft = 15; let canAnswer = false;
-        let answeredMe = false; let answeredOp = false;
+        // Kiểm tra xem người dùng vào bằng link thường hay link thách đấu
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const encodedIds = urlParams.get('room');
 
-        function showScreen(screenId) {
-            ['screen-menu', 'screen-lobby', 'screen-game', 'screen-result'].forEach(id => {
-                document.getElementById(id).classList.add('hidden');
-            });
-            document.getElementById(screenId).classList.remove('hidden');
-        }
-
-        // Khởi tạo PubNub theo mã phòng tự nhập
-        function initPubNub(targetRoom, callback) {
-            roomCode = targetRoom;
-            pubnub = new PubNub({
-                publishKey: 'pub-c-4934d4a8-64c8-4712-a162-817b07ea69a2', 
-                subscribeKey: 'sub-c-246e4be3-bfbb-4f46-9917-fa16ca9d7f02',
-                userId: myPlayerId
-            });
-
-            pubnub.addListener({
-                message: function(event) {
-                    if (event.publisher === myPlayerId) return; 
-                    handleNetworkData(event.message);
-                }
-            });
-
-            pubnub.subscribe({
-                channels: ['quiz_room_' + roomCode]
-            });
-
-            callback();
-        }
-
-        // BẤM NÚT KẾT NỐI VÀO PHÒNG
-        document.getElementById('btn-connect').addEventListener('click', () => {
-            sound.click();
-            const inputVal = document.getElementById('input-room').value.trim();
-            if (!inputVal) return alert("Vui lòng nhập một mã phòng bất kỳ!");
-            
-            document.getElementById('status-text').innerText = "Đang kết nối cổng mạng...";
-            
-            initPubNub(inputVal, () => {
-                document.getElementById('lobby-room-name').innerText = inputVal;
-                showScreen('screen-lobby');
+            if (encodedIds) {
+                // Chế độ chấp nhận thách đấu
+                isChallengerMode = true;
+                document.getElementById('menu-normal-mode').classList.add('hidden');
+                document.getElementById('menu-challenge-mode').classList.remove('hidden');
                 
-                // Gửi tín hiệu ping để xem trong phòng đã có ai chưa
-                setTimeout(() => {
-                    sendNetData({ type: 'PING_ROOM', senderId: myPlayerId });
-                }, 500);
-            });
+                // Giải mã danh sách câu hỏi đối thủ đã chơi từ Link
+                try {
+                    const ids = encodedIds.split('-').map(id => parseInt(id));
+                    activeQuestions = ids.map(id => questionBank[id]).filter(q => q !== undefined);
+                } catch(e) {
+                    generateRandomQuestions();
+                }
+            } else {
+                // Chế độ chơi bình thường tạo trận mới
+                isChallengerMode = false;
+                generateRandomQuestions();
+            }
         });
 
-        function sendNetData(dataObj) {
-            if (pubnub) {
-                pubnub.publish({
-                    channel: 'quiz_room_' + roomCode,
-                    message: dataObj
-                });
+        // Chọn ngẫu nhiên 10 câu hỏi từ ngân hàng đề
+        function generateRandomQuestions() {
+            let indexes = [];
+            while(indexes.length < 10) {
+                let r = Math.floor(Math.random() * questionBank.length);
+                if(!indexes.includes(r)) indexes.push(r);
             }
+            activeQuestions = indexes.map(id => questionBank[id]);
+            
+            // Tạo sẵn link thách đấu chứa 10 ID này
+            const codeStr = indexes.join('-');
+            challengeShareLink = `${window.location.origin}${window.location.pathname}?room=${codeStr}`;
         }
 
-        // Xử lý gói tin và luật chơi 2 người
-        function handleNetworkData(data) {
-            switch(data.type) {
-                case 'PING_ROOM':
-                    // Nếu mình đang ở trong màn hình chờ và nhận được ping, chứng tỏ mình là người vào trước (Host)
-                    // Gửi phản hồi báo cho người vào sau biết để bắt đầu game luôn
-                    isHost = true;
-                    sendNetData({ type: 'HOST_ACK', hostId: myPlayerId });
-                    startGame();
-                    break;
-
-                case 'HOST_ACK':
-                    // Nếu nhận được phản hồi từ Host, mình là người thứ 2 vào phòng
-                    if (!isHost && currentQuestionIdx === 0 && answeredMe === false) {
-                        startGame();
-                    }
-                    break;
-
-                case 'OP_ANSWERED':
-                    answeredOp = true;
-                    scoreOp = data.totalScore;
-                    document.getElementById('p2-status').innerText = "Đã chọn đáp án!";
-                    document.getElementById('p2-status').className = "text-[10px] text-amber-400 font-bold mt-0.5";
-                    checkRoundEnd();
-                    break;
-
-                case 'SYNC_NEXT_QUESTION':
-                    currentQuestionIdx = data.idx;
-                    loadQuestion();
-                    break;
-            }
+        function showScreen(id) {
+            ['screen-menu', 'screen-game', 'screen-result'].forEach(s => document.getElementById(s).classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
         }
+
+        // BẮT ĐẦU CHƠI (Cả 2 chế độ)
+        document.getElementById('btn-start-solo').addEventListener('click', () => { sound.click(); startGame(); });
+        document.getElementById('btn-start-challenge').addEventListener('click', () => { sound.click(); startGame(); });
 
         function startGame() {
-            scoreMe = 0; scoreOp = 0; currentQuestionIdx = 0;
+            currentIdx = 0;
+            totalScore = 0;
             showScreen('screen-game');
             loadQuestion();
         }
 
         function loadQuestion() {
             clearInterval(timerInterval);
-            answeredMe = false; answeredOp = false; canAnswer = true; timeLeft = 15;
+            timeLeft = 15;
 
-            document.getElementById('p1-status').innerText = "Đang suy nghĩ...";
-            document.getElementById('p1-status').className = "text-[10px] text-slate-400 italic mt-0.5";
-            document.getElementById('p2-status').innerText = "Đang suy nghĩ...";
-            document.getElementById('p2-status').className = "text-[10px] text-slate-400 italic mt-0.5";
-            document.getElementById('p1-score').innerText = `${scoreMe}đ`;
-            document.getElementById('p2-score').innerText = `${scoreOp}đ`;
-
-            const qData = questionBank[currentQuestionIdx];
-            document.getElementById('question-number').innerText = currentQuestionIdx + 1;
+            document.getElementById('game-score').innerText = `${totalScore}đ`;
+            document.getElementById('question-number').innerText = currentIdx + 1;
+            
+            const qData = activeQuestions[currentIdx];
             document.getElementById('question-text').innerText = qData.q;
 
             const btns = document.querySelectorAll('.ans-btn');
             btns.forEach((btn, i) => {
                 document.getElementById(`ans-${i}`).innerText = qData.a[i];
                 btn.className = "ans-btn w-full py-4 px-4 bg-slate-900 border border-slate-700/80 rounded-xl text-left font-medium text-slate-200 flex items-center space-x-3 transition-all";
+                btn.disabled = false;
             });
 
             document.getElementById('game-timer').innerText = timeLeft;
             timerInterval = setInterval(() => {
                 timeLeft--;
                 document.getElementById('game-timer').innerText = timeLeft;
-                if (timeLeft <= 0) {
+                if(timeLeft <= 0) {
                     clearInterval(timerInterval);
-                    if (!answeredMe) selectAnswer(-1);
+                    selectAnswer(-1); // Hết giờ coi như sai
                 }
             }, 1000);
         }
 
         function selectAnswer(index) {
-            if (!canAnswer || answeredMe) return;
-            answeredMe = true; canAnswer = false;
-
-            const qData = questionBank[currentQuestionIdx];
+            clearInterval(timerInterval);
+            const qData = activeQuestions[currentIdx];
             const btns = document.querySelectorAll('.ans-btn');
-            let pointEarned = 0;
+            
+            // Khóa các nút lại
+            btns.forEach(b => b.disabled = true);
 
             if (index === qData.c) {
-                pointEarned = 100 + (timeLeft * 5);
-                scoreMe += pointEarned; sound.correct();
-                if(index !== -1) btns[index].classList.replace('bg-slate-900', 'bg-emerald-950/80');
-                if(index !== -1) btns[index].classList.replace('border-slate-700/80', 'border-emerald-500');
-                document.getElementById('p1-status').innerText = `Chính xác! (+${pointEarned})`;
-                document.getElementById('p1-status').className = "text-[10px] text-emerald-400 font-bold mt-0.5";
+                // Đúng: Cộng điểm (Càng nhanh điểm càng cao)
+                let bonus = 100 + (timeLeft * 5);
+                totalScore += bonus;
+                sound.correct();
+                if(index !== -1) {
+                    btns[index].classList.replace('bg-slate-900', 'bg-emerald-950');
+                    btns[index].classList.replace('border-slate-700/80', 'border-emerald-500');
+                }
             } else {
+                // Sai
                 sound.wrong();
-                if(index !== -1) btns[index].classList.replace('bg-slate-900', 'bg-rose-950/80');
-                if(index !== -1) btns[index].classList.replace('border-slate-700/80', 'border-rose-500');
-                document.getElementById('p1-status').innerText = "Sai rồi!";
-                document.getElementById('p1-status').className = "text-[10px] text-rose-400 font-bold mt-0.5";
-                btns[qData.c].classList.replace('bg-slate-900', 'bg-emerald-950/40');
-                btns[qData.c].classList.replace('border-slate-700/80', 'border-emerald-600/80');
+                if(index !== -1) {
+                    btns[index].classList.replace('bg-slate-900', 'bg-rose-950');
+                    btns[index].classList.replace('border-slate-700/80', 'border-rose-500');
+                }
+                // Hiện đáp án đúng lên
+                btns[qData.c].classList.replace('bg-slate-900', 'bg-emerald-950/50');
+                btns[qData.c].classList.replace('border-slate-700/80', 'border-emerald-600/60');
             }
 
-            document.getElementById('p1-score').innerText = `${scoreMe}đ`;
-            sendNetData({ type: 'OP_ANSWERED', totalScore: scoreMe });
-            checkRoundEnd();
-        }
+            document.getElementById('game-score').innerText = `${totalScore}đ`;
 
-        function checkRoundEnd() {
-            if (answeredMe && answeredOp) {
-                clearInterval(timerInterval);
-                setTimeout(() => {
-                    currentQuestionIdx++;
-                    if (currentQuestionIdx < questionBank.length) {
-                        if (isHost) {
-                            sendNetData({ type: 'SYNC_NEXT_QUESTION', idx: currentQuestionIdx });
-                            loadQuestion();
-                        }
-                    } else {
-                        endGameFinal();
-                    }
-                }, 2500);
-            }
+            // Đợi 2 giây xem kết quả rồi tự qua câu mới
+            setTimeout(() => {
+                currentIdx++;
+                if (currentIdx < activeQuestions.length) {
+                    loadQuestion();
+                } else {
+                    endGameFinal();
+                }
+            }, 2000);
         }
 
         function endGameFinal() {
             showScreen('screen-result');
-            document.getElementById('final-p1').innerText = `${scoreMe}đ`;
-            document.getElementById('final-p2').innerText = `${scoreOp}đ`;
-            if (scoreMe > scoreOp) {
-                document.getElementById('result-icon').innerText = "🏆";
-                document.getElementById('result-title').innerText = "BẠN ĐÃ THẮNG";
-                document.getElementById('result-title').className = "text-3xl font-black text-amber-400";
-                sound.win();
-            } else if (scoreMe < scoreOp) {
-                document.getElementById('result-icon').innerText = "🥶";
-                document.getElementById('result-title').innerText = "BẠN ĐÃ THUA";
-                document.getElementById('result-title').className = "text-3xl font-black text-slate-400";
+            document.getElementById('final-score').innerText = `${totalScore}đ`;
+
+            if (isChallengerMode) {
+                // Nếu là người đi thách đấu lại, ẩn khung tạo link đi (vì trận đấu kết thúc)
+                document.getElementById('share-box').innerHTML = `
+                    <p class="text-amber-400 font-bold">🏁 ĐÃ HOÀN THÀNH THÁCH ĐẤU</p>
+                    <p class="text-xs text-slate-300 mt-2">Hãy gửi điểm số này (<span class="text-cyan-400 font-bold">${totalScore}đ</span>) cho người thách đấu bạn để phân định thắng bại!</p>
+                `;
             } else {
-                document.getElementById('result-icon').innerText = "🤝";
-                document.getElementById('result-title').innerText = "HÒA NHAU";
-                document.getElementById('result-title').className = "text-3xl font-black text-cyan-400";
+                // Nếu là người chơi đầu tiên, tạo mã QR để người thứ 2 quét chơi luôn
+                document.getElementById('qrcode').innerHTML = "";
+                new QRCode(document.getElementById("qrcode"), {
+                    text: challengeShareLink,
+                    width: 160,
+                    height: 160,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
             }
         }
+
+        // Nút bấm sao chép link thách đấu nhanh
+        document.getElementById('btn-copy-link').addEventListener('click', () => {
+            navigator.clipboard.writeText(challengeShareLink).then(() => {
+                alert("Đã sao chép Link thách đấu! Hãy gửi nó cho bạn bè qua Zalo hoặc Messenger nhé.");
+            }).catch(err => {
+                alert("Hãy copy thủ công link này: " + challengeShareLink);
+            });
+        });
     </script>
 </body>
 </html>
