@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Đấu Trường Triệu Phú</title>
+    <!-- Tailwind CSS để giao diện đẹp trên điện thoại -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Thư viện kết nối Realtime đơn giản không cần tài khoản -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%);
+            font-family: system-ui, -apple-system, sans-serif;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .jbt-btn {
+            background: linear-gradient(90deg, #1e3a8a 0%, #0d9488 100%);
+            border: 2px solid #38bdf8;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+        }
+        .jbt-btn:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body class="text-white min-h-screen flex flex-col justify-between p-4 selection:bg-transparent">
+
+    <!-- SCREEN 1: MENU CHÍNH / TẠO PHÒNG -->
+    <div id="screen-menu" class="flex-1 flex flex-col justify-center items-center space-y-8 max-w-md mx-auto w-full">
+        <div class="text-center">
+            <h1 class="text-3xl font-extrabold tracking-wider text-cyan-400 drop-shadow-[0_0_15px_rgba(34,211,238,0.5)] uppercase">Đấu Trường</h1>
+            <p class="text-xl font-semibold text-amber-400">TRIỆU PHÚ ONLINE</p>
+        </div>
+
+        <div class="bg-slate-900/80 border border-slate-700 rounded-2xl p-6 w-full space-y-6 backdrop-blur-sm">
+            <!-- Tạo phòng -->
+            <div class="space-y-2">
+                <button id="btn-create" class="w-full py-4 rounded-xl font-bold text-lg jbt-btn transition-all text-white">
+                    ➕ TẠO PHÒNG THI ĐẤU
+                </button>
+                <p id="room-display" class="text-center text-emerald-400 font-mono font-bold hidden text-lg mt-2 animate-pulse"></p>
+            </div>
+
+            <div class="flex items-center justify-center space-x-2 text-slate-500">
+                <div class="h-[1px] bg-slate-700 flex-1"></div>
+                <span>HOẶC</span>
+                <div class="h-[1px] bg-slate-700 flex-1"></div>
+            </div>
+
+            <!-- Vào phòng có sẵn -->
+            <div class="space-y-3">
+                <input id="input-room" type="text" placeholder="Nhập mã phòng từ bạn bè..." 
+                    class="w-full px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-center text-xl font-mono text-amber-300 placeholder:text-slate-600 focus:outline-none focus:border-cyan-400">
+                <button id="btn-join" class="w-full py-4 bg-slate-800 border border-slate-600 rounded-xl font-bold text-lg hover:bg-slate-700 transition-all">
+                    🤝 VÀO PHÒNG
+                </button>
+            </div>
+        </div>
+        <p id="status-text" class="text-sm text-slate-400 text-center animate-pulse">Đang khởi tạo hệ thống mạng...</p>
+    </div>
+
+    <!-- SCREEN 2: MÀN HÌNH CHỜ ĐỐI THỦ -->
+    <div id="screen-lobby" class="hidden flex-1 flex flex-col justify-center items-center space-y-6 max-w-md mx-auto w-full">
+        <div class="loader ease-linear rounded-full border-4 border-t-4 border-slate-700 h-12 w-12 border-t-cyan-400 animate-spin"></div>
+        <h2 class="text-xl font-bold text-center">Đang đợi đối thủ vào phòng...</h2>
+        <p class="text-slate-400 text-sm text-center">Hãy gửi mã phòng cho bạn bè của bạn mở trên điện thoại của họ.</p>
+        <button id="btn-cancel" class="px-6 py-2 bg-rose-950/50 border border-rose-800 rounded-lg text-rose-300 text-sm">Hủy phòng</button>
+    </div>
+
+    <!-- SCREEN 3: MÀN HÌNH TRẬN ĐẤU -->
+    <div id="screen-game" class="hidden flex-1 flex flex-col justify-between max-w-md mx-auto w-full pt-2">
+        <!-- Thanh trạng thái người chơi -->
+        <div class="grid grid-cols-2 gap-4 bg-slate-900/90 border border-slate-800 p-3 rounded-xl backdrop-blur-sm">
+            <div class="border-r border-slate-800 pr-2">
+                <p class="text-xs text-slate-400 uppercase font-semibold">Bạn (Cơ thủ)</p>
+                <p id="p1-score" class="text-xl font-black text-cyan-400">0đ</p>
+                <div id="p1-status" class="text-[10px] text-slate-500 italic mt-0.5">Đang chờ câu hỏi...</div>
+            </div>
+            <div class="pl-2 text-right">
+                <p class="text-xs text-slate-400 uppercase font-semibold">Đối thủ</p>
+                <p id="p2-score" class="text-xl font-black text-rose-400">0đ</p>
+                <div id="p2-status" class="text-[10px] text-slate-500 italic mt-0.5">Đang chờ...</div>
+            </div>
+        </div>
+
+        <!-- Đồng hồ đếm ngược -->
+        <div class="my-4 text-center">
+            <div class="inline-block bg-slate-950/60 border border-slate-800 px-4 py-1.5 rounded-full">
+                <span class="text-xs text-slate-400 uppercase mr-1">Thời gian:</span>
+                <span id="game-timer" class="font-mono text-xl font-bold text-amber-400">15</span>s
+            </div>
+        </div>
+
+        <!-- Khung Câu Hỏi -->
+        <div class="flex-1 flex items-center justify-center my-2 min-h-[140px] bg-slate-900/40 border border-slate-800/60 rounded-2xl p-5 text-center relative overflow-hidden">
+            <div class="absolute top-2 left-3 bg-slate-800 px-2 py-0.5 rounded text-[10px] font-mono text-slate-400">
+                Câu <span id="question-number">1</span>/10
+            </div>
+            <p id="question-text" class="text-lg font-bold leading-relaxed text-slate-100">Đang tải câu hỏi...</p>
+        </div>
+
+        <!-- Các nút Đáp Án -->
+        <div class="grid grid-cols-1 gap-3 mt-4 mb-2">
+            <button onclick="selectAnswer(0)" class="ans-btn w-full py-4 px-4 bg-slate-900 border border-slate-700/80 rounded-xl text-left font-medium text-slate-200 active:bg-cyan-950 active:border-cyan-500 flex items-center space-x-3 transition-all">
+                <span class="text-amber-400 font-bold font-mono">A.</span> <span id="ans-0">---</span>
+            </button>
+            <button onclick="selectAnswer(1)" class="ans-btn w-full py-4 px-4 bg-slate-900 border border-slate-700/80 rounded-xl text-left font-medium text-slate-200 active:bg-cyan-950 active:border-cyan-500 flex items-center space-x-3 transition-all">
+                <span class="text-amber-400 font-bold font-mono">B.</span> <span id="ans-1">---</span>
+            </button>
+            <button onclick="selectAnswer(2)" class="ans-btn w-full py-4 px-4 bg-slate-900 border border-slate-700/80 rounded-xl text-left font-medium text-slate-200 active:bg-cyan-950 active:border-cyan-500 flex items-center space-x-3 transition-all">
+                <span class="text-amber-400 font-bold font-mono">C.</span> <span id="ans-2">---</span>
+            </button>
+            <button onclick="selectAnswer(3)" class="ans-btn w-full py-4 px-4 bg-slate-900 border border-slate-700/80 rounded-xl text-left font-medium text-slate-200 active:bg-cyan-950 active:border-cyan-500 flex items-center space-x-3 transition-all">
+                <span class="text-amber-400 font-bold font-mono">D.</span> <span id="ans-3">---</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- SCREEN 4: KẾT QUẢ CHUNG CUỘC -->
+    <div id="screen-result" class="hidden flex-1 flex flex-col justify-center items-center space-y-6 max-w-md mx-auto w-full">
+        <div class="text-center space-y-2">
+            <div id="result-icon" class="text-6xl">🏆</div>
+            <h2 id="result-title" class="text-3xl font-black tracking-wide uppercase text-amber-400">BẠN ĐÃ THẮNG</h2>
+            <p id="result-summary" class="text-slate-400">Điểm số cuối cùng</p>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 w-full grid grid-cols-2 gap-4 text-center">
+            <div>
+                <p class="text-xs text-slate-400">Điểm của bạn</p>
+                <p id="final-p1" class="text-2xl font-bold text-cyan-400">0</p>
+            </div>
+            <div>
+                <p class="text-xs text-slate-400">Điểm đối thủ</p>
+                <p id="final-p2" class="text-2xl font-bold text-rose-400">0</p>
+            </div>
+        </div>
+
+        <button onclick="location.reload()" class="w-full py-4 jbt-btn font-bold rounded-xl text-lg">
+            🔄 QUAY LẠI MENU CHÍNH
+        </button>
+    </div>
+
+    <!-- HỆ THỐNG ÂM THANH MÔ PHỎNG -->
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playBeep(freq, type, duration) {
+            try {
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) {}
+        }
+        const sound = {
+            click: () => playBeep(600, 'sine', 0.1),
+            correct: () => { playBeep(880, 'sine', 0.1); setTimeout(() => playBeep(1320, 'sine', 0.2), 100); },
+            wrong: () => playBeep(180, 'sawtooth', 0.4),
+            win: () => { playBeep(523.25, 'square', 0.2); setTimeout(() => playBeep(659.25, 'square', 0.2), 150); setTimeout(() => playBeep(783.99, 'square', 0.4), 300); }
+        };
+    </script>
+
+    <!-- LOGIC GAME & MẠNG KẾT NỐI -->
+    <script>
+        // Kho dữ liệu câu hỏi phong cách Ai Là Triệu Phú Việt Nam
+        const questionBank = [
+            { q: "Chiếc áo dài truyền thống của Việt Nam thường được mặc kèm với loại quần nào?", a: ["Quần jean", "Quần ống rộng cùng màu hoặc trắng", "Quần đùi", "Quần tây"], c: 1 },
+            { q: "Sông nào được mệnh danh là dòng sông lớn nhất chảy qua miền Nam Việt Nam?", a: ["Sông Hồng", "Sông Hương", "Sông Mê Kông (Sông Cửu Long)", "Sông Thu Bồn"], c: 2 },
+            { q: "Tác phẩm điện ảnh nổi tiếng nào chuyển thể từ truyện Nguyễn Nhật Ánh lấy bối cảnh Quảng Nam?", a: ["Mắt Biếc", "Tôi Thấy Hoa Vàng Trên Cỏ Xanh", "Cô Gái Đến Từ Hôm Qua", "Kính Vạn Hoa"], c: 0 },
+            { q: "Trong trò chơi dân gian 'Bầu cua tôm cá', linh vật nào KHÔNG có trên bàn cờ?", a: ["Con Gà", "Con Hươu (Nai)", "Con Ngựa", "Con Cua"], c: 2 },
+            { q: "Món ăn nào được xem là đặc sản mang tính biểu tượng của Hội An?", a: ["Phở bò", "Cao Lầu", "Bún chả", "Bánh chưng"], c: 1 },
+            { q: "Quốc hoa chính thức của nước Cộng hòa Xã hội Chủ nghĩa Việt Nam là hoa gì?", a: ["Hoa Mai", "Hoa Đào", "Hoa Sen", "Hoa Cúc"], c: 2 },
+            { q: "Tỉnh thành nào của Việt Nam có đường bờ biển dài nhất?", a: ["Quảng Ninh", "Khánh Hòa", "Bình Thuận", "Kiên Giang"], c: 1 },
+            { q: "Trong bàn cờ Tướng, quân cờ nào chỉ được phép đi chéo và không được qua sông?", a: ["Quân Pháo", "Quân Tịnh (Tượng)", "Quân Sĩ", "Cả Sĩ và Tượng"], c: 3 },
+            { q: "Sự kiện lịch sử nào đánh dấu kết thúc chiến tranh Việt Nam, thống nhất đất nước?", a: ["30 tháng 4 năm 1975", "2 tháng 9 năm 1945", "7 tháng 5 năm 1954", "27 tháng 1 năm 1973"], c: 0 },
+            { q: "Thành phố nào là trung tâm kinh tế, công nghiệp lớn nhất miền Nam Việt Nam?", a: ["Đà Nẵng", "Cần Thơ", "Hà Nội", "Thành phố Hồ Chí Minh"], c: 3 }
+        ];
+
+        let peer = null;
+        let conn = null;
+        let myId = "";
+        let isHost = false;
+        let currentRoomId = "";
+
+        // Trạng thái Game
+        let scoreMe = 0;
+        let scoreOp = 0;
+        let currentQuestionIdx = 0;
+        let timerInterval = null;
+        let timeLeft = 15;
+        let canAnswer = false;
+        let answeredMe = false;
+        let answeredOp = false;
+
+        // Quản lý ẩn hiện màn hình
+        function showScreen(screenId) {
+            ['screen-menu', 'screen-lobby', 'screen-game', 'screen-result'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(screenId).classList.remove('hidden');
+        }
+
+        // Khởi tạo PeerJS để kết nối trực tiếp 2 điện thoại
+        function initNetwork() {
+            // Tạo ID ngẫu nhiên gồm 4 số để người chơi nhập cho dễ trên điện thoại
+            const shortId = Math.floor(1000 + Math.random() * 9000).toString();
+            peer = new Peer(shortId);
+
+            peer.on('open', (id) => {
+                myId = id;
+                document.getElementById('status-text').innerText = "Hệ thống mạng đã sẵn sàng!";
+                document.getElementById('status-text').classList.remove('animate-pulse');
+            });
+
+            peer.on('error', (err) => {
+                alert("Lỗi kết nối hoặc Mã phòng đã tồn tại. Vui lòng bấm tạo lại phòng!");
+                location.reload();
+            });
+
+            // Lắng nghe khi có người khác kết nối vào (Nếu mình là chủ phòng)
+            peer.on('connection', (connection) => {
+                if (conn) return; // Chỉ nhận tối đa 1 đối thủ
+                conn = connection;
+                setupConnectionHandlers();
+                isHost = true;
+                sendNetData({ type: 'START_GAME' });
+                startGame();
+            });
+        }
+
+        // Người chơi bấm TẠO PHÒNG
+        document.getElementById('btn-create').addEventListener('click', () => {
+            sound.click();
+            if (!myId) return alert("Hệ thống mạng chưa tải xong, đợi xíu bạn nhé!");
+            currentRoomId = myId;
+            document.getElementById('room-display').innerText = `MÃ PHÒNG CỦA BẠN: ${myId}`;
+            document.getElementById('room-display').classList.remove('hidden');
+            showScreen('screen-lobby');
+        });
+
+        // Người chơi bấm VÀO PHÒNG
+        document.getElementById('btn-join').addEventListener('click', () => {
+            sound.click();
+            const targetId = document.getElementById('input-room').value.trim();
+            if (!targetId) return alert("Vui lòng nhập mã phòng của bạn bè!");
+            
+            document.getElementById('status-text').innerText = "Đang kết nối tới phòng...";
+            conn = peer.connect(targetId);
+            
+            conn.on('open', () => {
+                isHost = false;
+                // Game sẽ tự bắt đầu khi nhận lệnh START_GAME từ Host gửi qua
+            });
+            
+            setupConnectionHandlers();
+        });
+
+        document.getElementById('btn-cancel').addEventListener('click', () => { location.reload(); });
+
+        // Xử lý luồng truyền dữ liệu qua lại giữa 2 máy
+        function setupConnectionHandlers() {
+            conn.on('data', (data) => {
+                switch(data.type) {
+                    case 'START_GAME':
+                        startGame();
+                        break;
+                    case 'OP_ANSWER':
+                        // Đối thủ đã trả lời
+                        answeredOp = true;
+                        document.getElementById('p2-status').innerText = "Đã chọn đáp án!";
+                        document.getElementById('p2-status').classList.add('text-amber-400');
+                        scoreOp = data.totalScore;
+                        checkRoundEnd();
+                        break;
+                    case 'NEXT_QUESTION':
+                        currentQuestionIdx = data.idx;
+                        loadQuestion();
+                        break;
+                }
+            });
+
+            conn.on('close', () => {
+                alert("Đối thủ đã thoát trận hoặc mất kết nối!");
+                location.reload();
+            });
+        }
+
+        function sendNetData(obj) {
+            if (conn && conn.open) {
+                conn.send(obj);
+            }
+        }
+
+        // BẮT ĐẦU VÀO TRẬN ĐẤU
+        function startGame() {
+            scoreMe = 0;
+            scoreOp = 0;
+            currentQuestionIdx = 0;
+            showScreen('screen-game');
+            loadQuestion();
+        }
+
+        // TẢI NỘI DUNG CÂU HỎI LÊN MÀN HÌNH
+        function loadQuestion() {
+            clearInterval(timerInterval);
+            answeredMe = false;
+            answeredOp = false;
+            canAnswer = true;
+            timeLeft = 15;
+
+            // Reset trạng thái hiển thị
+            document.getElementById('p1-status').innerText = "Đang suy nghĩ...";
+            document.getElementById('p1-status').className = "text-[10px] text-slate-400 italic mt-0.5";
+            document.getElementById('p2-status').innerText = "Đang suy nghĩ...";
+            document.getElementById('p2-status').className = "text-[10px] text-slate-400 italic mt-0.5";
+            
+            document.getElementById('p1-score').innerText = `${scoreMe}đ`;
+            document.getElementById('p2-score').innerText = `${scoreOp}đ`;
+
+            const qData = questionBank[currentQuestionIdx];
+            document.getElementById('question-number').innerText = currentQuestionIdx + 1;
+            document.getElementById('question-text').innerText = qData.q;
+
+            const btns = document.querySelectorAll('.ans-btn');
+            btns.forEach((btn, i) => {
+                document.getElementById(`ans-${i}`).innerText = qData.a[i];
+                btn.className = "ans-btn w-full py-4 px-4 bg-slate-900 border border-slate-700/80 rounded-xl text-left font-medium text-slate-200 active:bg-cyan-950 active:border-cyan-500 flex items-center space-x-3 transition-all";
+            });
+
+            // Bắt đầu đếm ngược thời gian câu hỏi
+            document.getElementById('game-timer').innerText = timeLeft;
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('game-timer').innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    if (!answeredMe) selectAnswer(-1); // Hết giờ xem như trả lời sai
+                }
+            }, 1000);
+        }
+
+        // NGƯỜI CHƠI BẤM CHỌN ĐÁP ÁN
+        function selectAnswer(index) {
+            if (!canAnswer || answeredMe) return;
+            answeredMe = true;
+            canAnswer = false; // Khóa không cho bấm nút khác
+
+            const qData = questionBank[currentQuestionIdx];
+            const btns = document.querySelectorAll('.ans-btn');
+
+            let pointEarned = 0;
+            if (index === qData.c) {
+                // Đúng: Cộng điểm (Càng nhanh điểm càng cao: 100đ + thời gian còn lại x 5đ)
+                pointEarned = 100 + (timeLeft * 5);
+                scoreMe += pointEarned;
+                sound.correct();
+                if(index !== -1) btns[index].classList.replace('bg-slate-900', 'bg-emerald-950/80');
+                if(index !== -1) btns[index].classList.replace('border-slate-700/80', 'border-emerald-500');
+                document.getElementById('p1-status').innerText = `Chính xác! (+${pointEarned})`;
+                document.getElementById('p1-status').className = "text-[10px] text-emerald-400 font-bold mt-0.5";
+            } else {
+                // Sai
+                sound.wrong();
+                if(index !== -1) btns[index].classList.replace('bg-slate-900', 'bg-rose-950/80');
+                if(index !== -1) btns[index].classList.replace('border-slate-700/80', 'border-rose-500');
+                document.getElementById('p1-status').innerText = "Sai rồi!";
+                document.getElementById('p1-status').className = "text-[10px] text-rose-400 font-bold mt-0.5";
+                
+                // Show đáp án đúng luôn
+                btns[qData.c].classList.replace('bg-slate-900', 'bg-emerald-950/40');
+                btns[qData.c].classList.replace('border-slate-700/80', 'border-emerald-600/80');
+            }
+
+            document.getElementById('p1-score').innerText = `${scoreMe}đ`;
+            
+            // Đồng bộ dữ liệu sang máy đối thủ ngay lập tức
+            sendNetData({
+                type: 'OP_ANSWER',
+                chosenIdx: index,
+                totalScore: scoreMe
+            });
+
+            checkRoundEnd();
+        }
+
+        // KIỂM TRA XEM CẢ HAI ĐÃ ĐÁP XONG CHƯA ĐỂ QUA CÂU MỚI
+        function checkRoundEnd() {
+            if (answeredMe && answeredOp) {
+                clearInterval(timerInterval);
+                setTimeout(() => {
+                    currentQuestionIdx++;
+                    if (currentQuestionIdx < questionBank.length) {
+                        // Nếu là Host thì quyết định qua câu tiếp theo cho cả 2 máy đồng bộ
+                        if (isHost) {
+                            sendNetData({ type: 'NEXT_QUESTION', idx: currentQuestionIdx });
+                            loadQuestion();
+                        }
+                    } else {
+                        endGameFinal();
+                    }
+                }, 2500); // Đợi 2.5 giây cho người chơi xem kết quả câu hiện tại rồi tự chuyển câu
+            }
+        }
+
+        // MÀN HÌNH KẾT QUẢ CHUNG CUỘC
+        function endGameFinal() {
+            showScreen('screen-result');
+            document.getElementById('final-p1').innerText = `${scoreMe}đ`;
+            document.getElementById('final-p2').innerText = `${scoreOp}đ`;
+
+            if (scoreMe > scoreOp) {
+                document.getElementById('result-icon').innerText = "🏆";
+                document.getElementById('result-title').innerText = "BẠN ĐÃ THẮNG";
+                document.getElementById('result-title').className = "text-3xl font-black tracking-wide uppercase text-amber-400";
+                sound.win();
+            } else if (scoreMe < scoreOp) {
+                document.getElementById('result-icon').innerText = "🥶";
+                document.getElementById('result-title').innerText = "BẠN ĐÃ THUA";
+                document.getElementById('result-title').className = "text-3xl font-black tracking-wide uppercase text-slate-400";
+            } else {
+                document.getElementById('result-icon').innerText = "🤝";
+                document.getElementById('result-title').innerText = "HÒA NHAU";
+                document.getElementById('result-title').className = "text-3xl font-black tracking-wide uppercase text-cyan-400";
+            }
+        }
+
+        // Chạy mạng ngay khi mở app
+        initNetwork();
+    </script>
+</body>
+</html>
