@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Đấu Trường Triệu Phú PRO</title>
+    <!-- Tailwind CSS giao diện hiện đại -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
         body {
@@ -19,15 +20,16 @@
         }
         .jbt-btn:active { transform: scale(0.98); }
         .milestone-active {
-            background: linear-gradient(90deg, #b45309 0%, #d97706 100%);
-            color: #ffffff;
+            background: linear-gradient(90deg, #b45309 0%, #d97706 100%) !important;
+            color: #ffffff !important;
             font-weight: 900;
-            border-left: 4px solid #f59e0b;
+            border-left: 4px solid #f59e0b !important;
         }
     </style>
 </head>
 <body class="text-white min-h-screen flex flex-col justify-between p-2 md:p-4 selection:bg-transparent">
 
+    <!-- SCREEN 1: MENU CHÍNH -->
     <div id="screen-menu" class="flex-1 flex flex-col justify-center items-center space-y-8 max-w-md mx-auto w-full">
         <div class="text-center space-y-2">
             <h1 class="text-4xl font-black tracking-widest text-cyan-400 drop-shadow-[0_0_20px_rgba(34,211,238,0.6)] uppercase">Ai Là Ai</h1>
@@ -54,10 +56,12 @@
         </div>
     </div>
 
-    <div id="screen-game" class="hidden flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 max-w-7xl w-full mx-auto pt-2 items-stretch">
+    <!-- SCREEN 2: TRẬN ĐẤU (ĐÃ FIX LỖI TRANH CHẤP DIỆN TÍCH GRID) -->
+    <div id="screen-game" class="hidden flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 max-w-7xl w-full mx-auto pt-2 items-start">
         
-        <div class="bg-slate-900/80 border border-slate-800 p-3 rounded-xl flex lg:flex-col justify-between lg:justify-start gap-2 h-fit lg:h-full">
-            <p class="hidden lg:block text-xs font-bold text-slate-400 uppercase border-b border-slate-800 pb-2 mb-2 text-center tracking-wider">Quyền trợ giúp</p>
+        <!-- CỘT TRÁI: CÁC QUYỀN TRỢ GIÚP (Thêm h-fit để không đè màn hình) -->
+        <div class="bg-slate-900/80 border border-slate-800 p-3 rounded-xl flex lg:flex-col justify-between gap-2 w-full h-fit z-10">
+            <p class="hidden lg:block text-xs font-bold text-slate-400 uppercase border-b border-slate-800 pb-2 mb-1 text-center tracking-wider">Quyền trợ giúp</p>
             
             <button id="help-5050" class="flex-1 lg:flex-none py-2.5 px-2 bg-slate-950 border border-cyan-500/30 rounded-lg text-xs font-bold text-cyan-400 hover:border-cyan-400 transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none">
                 🌓 50 / 50
@@ -73,7 +77,9 @@
             </button>
         </div>
 
-        <div class="lg:col-span-2 flex flex-col justify-between space-y-4">
+        <!-- CỘT GIỮA: KHU VỰC CÂU HỎI CHÍNH (Chiếm 2 cột trên màn hình lớn) -->
+        <div class="lg:col-span-2 flex flex-col space-y-4 w-full z-20">
+            <!-- HUD Thông tin đầu trận -->
             <div class="bg-slate-900/90 border border-slate-800 p-3 rounded-xl flex justify-between items-center">
                 <div>
                     <p class="text-xs text-slate-400 uppercase font-semibold">Tiền thưởng hiện tại</p>
@@ -84,14 +90,16 @@
                 </div>
             </div>
 
+            <!-- Panel hiển thị hình ảnh đồ họa trợ giúp đặc biệt nếu kích hoạt -->
             <div id="panel-help-display" class="hidden bg-slate-950 border border-amber-500/20 rounded-xl p-3 text-sm text-slate-300">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-1 mb-2">
                     <span id="help-title-txt" class="text-xs font-bold text-amber-400 uppercase">⚡ Trợ giúp</span>
-                    <button onclick="document.getElementById('panel-help-display').classList.add('hidden')" class="text-xs text-slate-500 hover:text-white">Đóng ✕</button>
+                    <button onclick="document.getElementById('panel-help-display').classList.add('hidden')" class="text-xs text-slate-500 hover:text-white cursor-pointer">Đóng ✕</button>
                 </div>
                 <div id="help-content-txt" class="font-medium space-y-1"></div>
             </div>
 
+            <!-- Khung câu hỏi -->
             <div class="flex-1 flex items-center justify-center min-h-[140px] bg-slate-900/40 border border-slate-800/60 rounded-2xl p-5 text-center relative">
                 <div class="absolute top-2 left-3 bg-slate-800 px-2 py-0.5 rounded text-[10px] font-mono text-slate-400">
                     MỐC CÂU HỎI: <span id="question-number">1</span>/15
@@ -99,29 +107,33 @@
                 <p id="question-text" class="text-lg md:text-xl font-bold leading-relaxed text-slate-100">Đang tải câu hỏi...</p>
             </div>
 
-            <div class="grid grid-cols-1 gap-3 mb-2">
-                <button id="btn-ans-0" class="ans-btn w-full py-3.5 px-4 bg-slate-900 border border-slate-700/80 rounded-xl text-left font-medium text-slate-200 flex items-center space-x-3 transition-all cursor-pointer">
-                    <span class="text-amber-400 font-bold font-mono">A.</span> <span id="ans-0">---</span>
+            <!-- Các nút đáp án (Bổ sung thuộc tính hover và cô lập hành vi click) -->
+            <div class="grid grid-cols-1 gap-3 relative">
+                <button id="btn-ans-0" class="ans-btn w-full py-4 px-4 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 rounded-xl text-left font-medium text-slate-200 flex items-center space-x-3 transition-all cursor-pointer">
+                    <span class="text-amber-400 font-bold font-mono pointer-events-none">A.</span> <span id="ans-0" class="pointer-events-none">---</span>
                 </button>
-                <button id="btn-ans-1" class="ans-btn w-full py-3.5 px-4 bg-slate-900 border border-slate-700/80 rounded-xl text-left font-medium text-slate-200 flex items-center space-x-3 transition-all cursor-pointer">
-                    <span class="text-amber-400 font-bold font-mono">B.</span> <span id="ans-1">---</span>
+                <button id="btn-ans-1" class="ans-btn w-full py-4 px-4 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 rounded-xl text-left font-medium text-slate-200 flex items-center space-x-3 transition-all cursor-pointer">
+                    <span class="text-amber-400 font-bold font-mono pointer-events-none">B.</span> <span id="ans-1" class="pointer-events-none">---</span>
                 </button>
-                <button id="btn-ans-2" class="ans-btn w-full py-3.5 px-4 bg-slate-900 border border-slate-700/80 rounded-xl text-left font-medium text-slate-200 flex items-center space-x-3 transition-all cursor-pointer">
-                    <span class="text-amber-400 font-bold font-mono">C.</span> <span id="ans-2">---</span>
+                <button id="btn-ans-2" class="ans-btn w-full py-4 px-4 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 rounded-xl text-left font-medium text-slate-200 flex items-center space-x-3 transition-all cursor-pointer">
+                    <span class="text-amber-400 font-bold font-mono pointer-events-none">C.</span> <span id="ans-2" class="pointer-events-none">---</span>
                 </button>
-                <button id="btn-ans-3" class="ans-btn w-full py-3.5 px-4 bg-slate-900 border border-slate-700/80 rounded-xl text-left font-medium text-slate-200 flex items-center space-x-3 transition-all cursor-pointer">
-                    <span class="text-amber-400 font-bold font-mono">D.</span> <span id="ans-3">---</span>
+                <button id="btn-ans-3" class="ans-btn w-full py-4 px-4 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 rounded-xl text-left font-medium text-slate-200 flex items-center space-x-3 transition-all cursor-pointer">
+                    <span class="text-amber-400 font-bold font-mono pointer-events-none">D.</span> <span id="ans-3" class="pointer-events-none">---</span>
                 </button>
             </div>
         </div>
 
-        <div class="bg-slate-900/90 border border-slate-800 p-2 rounded-xl flex flex-col justify-between text-[11px] font-mono">
+        <!-- CỘT PHẢI: BẢNG 15 MỐC TIỀN THƯỞNG (Thêm h-fit để tránh đè layer) -->
+        <div class="bg-slate-900/90 border border-slate-800 p-2 rounded-xl flex flex-col text-[11px] font-mono w-full h-fit z-10">
             <p class="text-center font-bold text-slate-500 uppercase tracking-widest text-[10px] mb-1 border-b border-slate-800 pb-1">Tháp Tiền Thưởng</p>
             <div id="milestone-list" class="flex flex-col-reverse gap-0.5">
-                </div>
+                <!-- Sẽ tự động kết xuất dữ liệu qua JS -->
+            </div>
         </div>
     </div>
 
+    <!-- SCREEN 3: KẾT QUẢ CHUNG CUỘC -->
     <div id="screen-result" class="hidden flex-1 flex flex-col justify-center items-center space-y-5 max-w-md mx-auto w-full py-4 text-center">
         <div class="space-y-1">
             <div class="text-6xl animate-pulse">🏆</div>
@@ -144,6 +156,7 @@
         </button>
     </div>
 
+    <!-- HỆ THỐNG ÂM THANH GIẢ LẬP ĐA TẦN SỐ -->
     <script>
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playBeep(freq, type, duration, vol = 0.1) {
@@ -165,15 +178,14 @@
         };
     </script>
 
+    <!-- LOGIC GAME CHÍNH -->
     <script>
-        // Danh sách 15 mốc giải thưởng chuẩn
         const prizeMilestones = [
             "200.000", "400.000", "600.000", "1.000.000", "2.000.000",
             "3.000.000", "6.000.000", "10.000.000", "14.000.000", "22.000.000",
             "30.000.000", "40.000.000", "60.000.000", "85.000.000", "150.000.000"
         ];
 
-        // NGÂN HÀNG ĐỀ ĐA DẠNG 25 CÂU HỎI
         const questionBank = [
             { q: "Chiếc áo dài truyền thống của Việt Nam thường được mặc kèm với loại quần nào?", a: ["Quần jean", "Quần ống rộng cùng màu hoặc trắng", "Quần đùi", "Quần tây"], c: 1 },
             { q: "Sông nào được mệnh danh là dòng sông lớn nhất chảy qua miền Nam Việt Nam?", a: ["Sông Hồng", "Sông Hương", "Sông Mê Kông (Sông Cửu Long)", "Sông Thu Bồn"], c: 2 },
@@ -198,7 +210,7 @@
             { q: "Hội An cổ kính nằm bên bờ hạ lưu của dòng sông thơ mộng nào?", a: ["Sông Hàn", "Sông Thu Bồn", "Sông Trà Khúc", "Sông Hương"], c: 1 },
             { q: "Đại nội Kinh thành Huế là di tích lịch sử triều đại phong kiến nào ở Việt Nam?", a: ["Triều Lê", "Triều Lý", "Triều Nguyễn", "Triều Trần"], c: 2 },
             { q: "Khu di tích lịch sử thánh địa Mỹ Sơn thuộc địa phận tỉnh nào?", a: ["Quảng Bình", "Quảng Nam", "Quảng Ngãi", "Thừa Thiên Huế"], c: 1 },
-            { q: "Món phở truyền thống Việt Nam nổi tiếng nhất với sự tinh túy từ thành phần nào?", a: ["Nước dùng hầm xương biệt truyền", "Bánh phở dai mịn", "Rau thơm", "Hạt tiêu"], c: 0 },
+            { q: "Món phở truyền thức Việt Nam nổi tiếng nhất với sự tinh túy từ thành phần nào?", a: ["Nước dùng hầm xương biệt truyền", "Bánh phở dai mịn", "Rau thơm", "Hạt tiêu"], c: 0 },
             { q: "Loại hình nghệ thuật sân khấu dân gian độc đáo diễn ra trên mặt nước của VN gọi là?", a: ["Hát Tuồng", "Múa rối nước", "Hát Chèo", "Cải lương"], c: 1 }
         ];
 
@@ -209,7 +221,6 @@
         let isChallengerMode = false;
         let challengeShareLink = "";
 
-        // Tạo cấu trúc tháp mốc tiền thưởng hiển thị phía bên phải
         function renderMilestoneTable() {
             const container = document.getElementById('milestone-list');
             container.innerHTML = "";
@@ -220,7 +231,7 @@
                 
                 const row = document.createElement('div');
                 row.id = `milestone-step-${idx}`;
-                row.className = `flex justify-between items-center px-2 py-1 rounded transition-all border border-transparent`;
+                row.className = `flex justify-between items-center px-2 py-1 rounded border border-transparent`;
                 row.innerHTML = `
                     <span class="${textColor}">${stepNum < 10 ? '0' + stepNum : stepNum}</span>
                     <span class="${isImportant ? 'text-amber-300 font-black' : 'text-slate-200'}">${prize}đ</span>
@@ -229,7 +240,12 @@
             });
         }
 
-        // Khởi tạo bàn chơi khi tải trang
+        // Đăng ký sự kiện click cho các đáp án (Tách biệt hoàn toàn, không lỗi kẹt sự kiện)
+        document.getElementById('btn-ans-0').addEventListener('click', () => selectAnswer(0));
+        document.getElementById('btn-ans-1').addEventListener('click', () => selectAnswer(1));
+        document.getElementById('btn-ans-2').addEventListener('click', () => selectAnswer(2));
+        document.getElementById('btn-ans-3').addEventListener('click', () => selectAnswer(3));
+
         window.addEventListener('DOMContentLoaded', () => {
             renderMilestoneTable();
             
@@ -254,7 +270,6 @@
             setupHelpListeners();
         });
 
-        // Tạo ngẫu nhiên 15 câu hỏi không trùng lặp
         function generateRandomQuestions(amount) {
             let indexes = [];
             while(indexes.length < amount) {
@@ -277,10 +292,9 @@
         function startGame() {
             currentIdx = 0;
             showScreen('screen-game');
-            // Reset các nút trợ giúp về trạng thái khả dụng
             ['help-5050', 'help-audience', 'help-call', 'help-swap'].forEach(id => {
                 document.getElementById(id).disabled = false;
-                document.getElementById(id).classList.remove('opacity-30', 'line-through', 'border-rose-500/40');
+                document.getElementById(id).classList.remove('opacity-30', 'line-through', 'border-rose-500/40 text-slate-500');
             });
             loadQuestion();
         }
@@ -290,15 +304,13 @@
             timeLeft = 30;
             document.getElementById('panel-help-display').classList.add('hidden');
 
-            // Cập nhật giao diện mốc tiền thưởng hiện tại trên tháp bên phải
             prizeMilestones.forEach((_, idx) => {
                 const el = document.getElementById(`milestone-step-${idx}`);
-                if (el) el.className = `flex justify-between items-center px-2 py-1 rounded transition-all border border-transparent`;
+                if (el) el.className = `flex justify-between items-center px-2 py-1 rounded border border-transparent`;
             });
             const currentMilestoneEl = document.getElementById(`milestone-step-${currentIdx}`);
             if (currentMilestoneEl) currentMilestoneEl.className += " milestone-active";
 
-            // Hiển thị số tiền hiện tại đang sở hữu lên HUD
             document.getElementById('game-prize').innerText = currentIdx === 0 ? "0 VND" : prizeMilestones[currentIdx - 1] + " VND";
             document.getElementById('question-number').innerText = currentIdx + 1;
             
@@ -308,9 +320,9 @@
             const btns = document.querySelectorAll('.ans-btn');
             btns.forEach((btn, i) => {
                 document.getElementById(`ans-${i}`).innerText = qData.a[i];
-                btn.className = "ans-btn w-full py-3.5 px-4 bg-slate-900 border border-slate-700/80 rounded-xl text-left font-medium text-slate-200 flex items-center space-x-3 transition-all cursor-pointer";
+                btn.className = "ans-btn w-full py-4 px-4 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 rounded-xl text-left font-medium text-slate-200 flex items-center space-x-3 transition-all cursor-pointer";
                 btn.disabled = false;
-                btn.style.visibility = "visible"; // Khôi phục từ trợ giúp 50/50
+                btn.style.visibility = "visible";
             });
 
             document.getElementById('game-timer').innerText = timeLeft;
@@ -320,7 +332,7 @@
                 if(timeLeft <= 5) sfx.timerLow();
                 if(timeLeft <= 0) {
                     clearInterval(timerInterval);
-                    selectAnswer(-1); // Hết giờ = tính là trả lời sai
+                    selectAnswer(-1);
                 }
             }, 1000);
         }
@@ -335,83 +347,56 @@
             if (index === qData.c) {
                 sfx.correct();
                 if(index !== -1) {
-                    btns[index].classList.replace('bg-slate-900', 'bg-emerald-950');
-                    btns[index].classList.replace('border-slate-700/80', 'border-emerald-400');
+                    btns[index].className = "ans-btn w-full py-4 px-4 bg-emerald-950 border border-emerald-400 rounded-xl text-left font-medium text-slate-200 flex items-center space-x-3 transition-all";
                 }
-                
-                // Trả lời đúng, đợi 2.5 giây rồi nạp mốc câu hỏi tiếp theo
                 setTimeout(() => {
                     currentIdx++;
                     if (currentIdx < 15) {
                         loadQuestion();
                     } else {
-                        endGameFinal(true); // Đại thắng vượt qua cả 15 câu!
+                        endGameFinal(true);
                     }
-                }, 2500);
-
+                }, 2000);
             } else {
                 sfx.wrong();
                 if(index !== -1) {
-                    btns[index].classList.replace('bg-slate-900', 'bg-rose-950');
-                    btns[index].classList.replace('border-slate-700/80', 'border-rose-400');
+                    btns[index].className = "ans-btn w-full py-4 px-4 bg-rose-950 border border-rose-400 rounded-xl text-left font-medium text-slate-200 flex items-center space-x-3 transition-all";
                 }
-                // Hiện câu đúng
-                btns[qData.c].classList.replace('bg-slate-900', 'bg-emerald-950/60');
-                btns[qData.c].classList.replace('border-slate-700/80', 'border-emerald-500/80');
-                
-                // Sai: Kết thúc game ngay
-                setTimeout(() => { endGameFinal(false); }, 2500);
+                btns[qData.c].className = "ans-btn w-full py-4 px-4 bg-emerald-950/60 border border-emerald-500/80 rounded-xl text-left font-medium text-slate-200 flex items-center space-x-3 transition-all";
+                setTimeout(() => { endGameFinal(false); }, 2000);
             }
         }
 
-        // CÁC QUYỀN TRỢ GIÚP LOGIC CHÍNH XÁC CAO
         function setupHelpListeners() {
-            // 1. Trợ giúp 50/50
             document.getElementById('help-5050').addEventListener('click', (e) => {
                 sfx.help();
                 const qData = activeQuestions[currentIdx];
                 let wrongIndexes = [];
                 for(let i=0; i<4; i++) { if(i !== qData.c) wrongIndexes.push(i); }
-                
-                // Xáo trộn ngẫu nhiên để xóa 2 trong số 3 đáp án sai
                 wrongIndexes.sort(() => Math.random() - 0.5);
                 const btns = document.querySelectorAll('.ans-btn');
-                
-                // Ẩn 2 đáp án sai đi
                 btns[wrongIndexes[0]].style.visibility = "hidden";
                 btns[wrongIndexes[1]].style.visibility = "hidden";
-                
                 disableHelpButton(e.target);
             });
 
-            // 2. Trợ giúp ý kiến khán giả trường quay
             document.getElementById('help-audience').addEventListener('click', (e) => {
                 sfx.help();
                 const qData = activeQuestions[currentIdx];
-                
-                // Phân bổ tỷ lệ thông minh: Dồn phần lớn phần trăm vào câu trả lời Đúng (65% - 85%)
                 let correctPercent = Math.floor(Math.random() * 20) + 65; 
                 let remain = 100 - correctPercent;
-                
                 let p1 = Math.floor(Math.random() * (remain - 5));
                 let p2 = Math.floor(Math.random() * (remain - p1));
                 let p3 = remain - p1 - p2;
-                
                 let percents = [p1, p2, p3];
                 let finalDistribution = [];
                 let pIndex = 0;
-                
                 for(let i=0; i<4; i++) {
-                    if(i === qData.c) {
-                        finalDistribution.push(correctPercent);
-                    } else {
-                        finalDistribution.push(percents[pIndex++]);
-                    }
+                    if(i === qData.c) finalDistribution.push(correctPercent);
+                    else finalDistribution.push(percents[pIndex++]);
                 }
-
-                // Render giao diện biểu đồ thanh ngang
                 const labels = ['A', 'B', 'C', 'D'];
-                let htmlContent = `<p class="text-xs text-slate-400 mb-1">Kết quả bình chọn của khán giả tại khán đài:</p>`;
+                let htmlContent = `<p class="text-xs text-slate-400 mb-1">Kết quả bình chọn từ khán giả:</p>`;
                 for(let i=0; i<4; i++) {
                     htmlContent += `
                         <div class="flex items-center space-x-2 text-xs">
@@ -422,50 +407,37 @@
                             <span class="w-8 font-mono text-right text-amber-400">${finalDistribution[i]}%</span>
                         </div>`;
                 }
-
-                showHelpPanel("👥 KẾT QUẢ Ý KIẾN KHÁN GIẢ", htmlContent);
+                showHelpPanel("👥 Ý KIẾN KHÁN GIẢ", htmlContent);
                 disableHelpButton(e.target);
             });
 
-            // 3. Trợ giúp gọi điện cho người thân / chuyên gia
             document.getElementById('help-call').addEventListener('click', (e) => {
                 sfx.help();
                 const qData = activeQuestions[currentIdx];
                 const labels = ['A', 'B', 'C', 'D'];
-                
-                // Xác suất 90% nói đúng đáp án
                 let chooseCorrect = Math.random() < 0.9;
                 let suggestedAns = chooseCorrect ? qData.c : Math.floor(Math.random() * 4);
-                
                 let htmlContent = `
                     <div class="space-y-1 text-xs">
                         <p class="text-slate-400 italic">⚡ Đang kết nối máy đến Chuyên gia Giáo dục...</p>
                         <p class="bg-slate-900 p-2 rounded border border-slate-800 text-slate-200">
-                            <strong class="text-cyan-400">Chuyên gia:</strong> "Theo dữ liệu nghiên cứu của tôi, câu này chắc chắn 100% là đáp án <span class="text-amber-400 font-bold text-sm underline">${labels[suggestedAns]}</span>. Bạn hãy tin tôi, không sai được đâu!"
+                            <strong class="text-cyan-400">Chuyên gia:</strong> "Theo phân tích, tôi tin đáp án đúng là <span class="text-amber-400 font-bold text-sm underline">${labels[suggestedAns]}</span>. Bạn chọn câu này đi nhé!"
                         </p>
                     </div>`;
-
                 showHelpPanel("📞 TRỢ GIÚP TỪ CHUYÊN GIA", htmlContent);
                 disableHelpButton(e.target);
             });
 
-            // 4. Trợ giúp đổi câu hỏi khác
             document.getElementById('help-swap').addEventListener('click', (e) => {
                 sfx.help();
-                // Lấy một câu hỏi bất kỳ từ ngân hàng đề mà chưa có trong danh sách đề hiện tại
                 let newQuestion = null;
                 while(!newQuestion) {
                     let r = Math.floor(Math.random() * questionBank.length);
                     let candidate = questionBank[r];
-                    if(!activeQuestions.includes(candidate)) {
-                        newQuestion = candidate;
-                    }
+                    if(!activeQuestions.includes(candidate)) newQuestion = candidate;
                 }
-                
-                // Thay thế câu hỏi hiện tại bằng câu hỏi mới
                 activeQuestions[currentIdx] = newQuestion;
-                loadQuestion(); // Nạp lại bảng hiển thị ngay
-                
+                loadQuestion();
                 disableHelpButton(e.target);
             });
         }
@@ -481,7 +453,6 @@
             document.getElementById('panel-help-display').classList.remove('hidden');
         }
 
-        // KẾT THÚC GAME: TÍNH TOÁN TIỀN THƯỞNG THEO LUẬT AN TOÀN
         function endGameFinal(isPerfectWin) {
             showScreen('screen-result');
             let prizeStr = "0 VND";
@@ -490,7 +461,6 @@
                 prizeStr = "150.000.000 VND";
                 document.getElementById('final-score-details').innerText = "Chúc mừng bạn đã xuất sắc vượt qua toàn bộ 15 câu hỏi!";
             } else {
-                // Tính mốc điểm an toàn (Mốc 5 hoặc Mốc 10)
                 if (currentIdx >= 10) {
                     prizeStr = "22.000.000 VND";
                     document.getElementById('final-score-details').innerText = `Dừng chân ở câu số ${currentIdx + 1}, bạn giữ lại mức thưởng an toàn (Mốc 10).`;
@@ -513,7 +483,6 @@
             }
         }
 
-        // SAO CHÉP ĐƯỜNG LINK THÁCH ĐẤU
         document.getElementById('btn-copy-link').addEventListener('click', () => {
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(challengeShareLink).then(() => {
