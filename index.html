@@ -6,7 +6,7 @@
     <title>Đấu Trường Triệu Phú</title>
     <!-- Tailwind CSS giao diện mobile -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- Thư viện PubNub Realtime chạy trực tiếp không cần đăng ký -->
+    <!-- Thư viện PubNub Realtime -->
     <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.2.2.min.js"></script>
     <style>
         body {
@@ -27,7 +27,7 @@
 </head>
 <body class="text-white min-h-screen flex flex-col justify-between p-4 selection:bg-transparent">
 
-    <!-- SCREEN 1: MENU CHÍNH -->
+    <!-- SCREEN 1: MENU CHÍNH / NHẬP KEY CHUNG -->
     <div id="screen-menu" class="flex-1 flex flex-col justify-center items-center space-y-8 max-w-md mx-auto w-full">
         <div class="text-center">
             <h1 class="text-3xl font-extrabold tracking-wider text-cyan-400 drop-shadow-[0_0_15px_rgba(34,211,238,0.5)] uppercase">Đấu Trường</h1>
@@ -35,41 +35,27 @@
         </div>
 
         <div class="bg-slate-900/80 border border-slate-700 rounded-2xl p-6 w-full space-y-6 backdrop-blur-sm">
-            <!-- Tạo phòng -->
-            <div class="space-y-2">
-                <button id="btn-create" class="w-full py-4 rounded-xl font-bold text-lg jbt-btn transition-all text-white">
-                    ➕ TẠO PHÒNG THI ĐẤU
-                </button>
-                <div id="room-display" class="text-center hidden bg-slate-950 p-3 rounded-xl border border-emerald-500/30">
-                    <p class="text-xs text-slate-400 uppercase">Mã phòng của bạn</p>
-                    <p id="room-code-txt" class="text-2xl font-mono font-black text-emerald-400 tracking-widest mt-1 animate-pulse">----</p>
-                </div>
-            </div>
-
-            <div class="flex items-center justify-center space-x-2 text-slate-500">
-                <div class="h-[1px] bg-slate-700 flex-1"></div>
-                <span>HOẶC</span>
-                <div class="h-[1px] bg-slate-700 flex-1"></div>
-            </div>
-
-            <!-- Vào phòng -->
             <div class="space-y-3">
-                <input id="input-room" type="tel" pattern="[0-9]*" inputmode="numeric" maxlength="4" placeholder="Nhập mã 4 số từ bạn bè..." 
-                    class="w-full px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-center text-2xl font-mono text-amber-300 placeholder:text-slate-600 focus:outline-none focus:border-cyan-400 tracking-widest">
-                <button id="btn-join" class="w-full py-4 bg-slate-800 border border-slate-600 rounded-xl font-bold text-lg hover:bg-slate-700 transition-all">
-                    🤝 VÀO PHÒNG
+                <label class="block text-sm font-medium text-slate-300 text-center uppercase tracking-wider">
+                    Nhập mã phòng chung (Ví dụ: 1234, tuấn_hà...)
+                </label>
+                <input id="input-room" type="text" placeholder="Nhập mã chung với bạn bè..." 
+                    class="w-full px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-center text-xl font-bold text-amber-300 placeholder:text-slate-600 focus:outline-none focus:border-cyan-400">
+                
+                <button id="btn-connect" class="w-full py-4 rounded-xl font-bold text-lg jbt-btn transition-all text-white">
+                    🚀 KẾT NỐI VÀO PHÒNG
                 </button>
             </div>
         </div>
-        <p id="status-text" class="text-sm text-slate-400 text-center animate-pulse">Đang kết nối đường truyền trực tuyến...</p>
+        <p id="status-text" class="text-sm text-slate-400 text-center">Hệ thống mạng đã sẵn sàng.</p>
     </div>
 
-    <!-- SCREEN 2: MÀN HÌNH CHỜ -->
+    <!-- SCREEN 2: MÀN HÌNH CHỜ ĐỐI THỦ -->
     <div id="screen-lobby" class="hidden flex-1 flex flex-col justify-center items-center space-y-6 max-w-md mx-auto w-full">
         <div class="rounded-full border-4 border-slate-700 h-12 w-12 border-t-cyan-400 animate-spin"></div>
-        <h2 class="text-xl font-bold text-center">Đang đợi đối thủ vào phòng...</h2>
-        <p class="text-slate-400 text-sm text-center">Hãy gửi mã phòng trên cho bạn bè mở trên điện thoại của họ để bắt đầu.</p>
-        <button onclick="location.reload()" class="px-6 py-2 bg-rose-950/50 border border-rose-800 rounded-lg text-rose-300 text-sm">Hủy phòng</button>
+        <h2 class="text-xl font-bold text-center">Đã vào cổng <span id="lobby-room-name" class="text-amber-400">---</span></h2>
+        <p class="text-slate-400 text-sm text-center">Đang đợi đối thủ nhập đúng mã này để cùng bắt đầu...</p>
+        <button onclick="location.reload()" class="px-6 py-2 bg-rose-950/50 border border-rose-800 rounded-lg text-rose-300 text-sm">Hủy / Thoát</button>
     </div>
 
     <!-- SCREEN 3: TRẬN ĐẤU -->
@@ -137,7 +123,7 @@
     </div>
 
     <script>
-        // Hệ thống âm thanh giả lập
+        // Hệ thống âm thanh âm nhạc giả lập
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playBeep(freq, type, duration) {
             try {
@@ -172,7 +158,8 @@
 
         let pubnub = null;
         let myPlayerId = "USER_" + Math.floor(Math.random() * 100000);
-        let roomCode = ""; let isHost = false;
+        let roomCode = ""; 
+        let isHost = false; // Người bấm kết nối đầu tiên trong phòng này sẽ tự làm Host
 
         let scoreMe = 0; let scoreOp = 0;
         let currentQuestionIdx = 0; let timerInterval = null;
@@ -186,57 +173,45 @@
             document.getElementById(screenId).classList.remove('hidden');
         }
 
-        // Khởi tạo PubNub dùng Key dùng chung công cộng miễn phí
+        // Khởi tạo PubNub theo mã phòng tự nhập
         function initPubNub(targetRoom, callback) {
             roomCode = targetRoom;
             pubnub = new PubNub({
-                publishKey: 'pub-c-4934d4a8-64c8-4712-a162-817b07ea69a2', // Demo keys công cộng của PubNub
+                publishKey: 'pub-c-4934d4a8-64c8-4712-a162-817b07ea69a2', 
                 subscribeKey: 'sub-c-246e4be3-bfbb-4f46-9917-fa16ca9d7f02',
                 userId: myPlayerId
             });
 
-            // Lắng nghe tin nhắn
             pubnub.addListener({
                 message: function(event) {
-                    if (event.publisher === myPlayerId) return; // Bỏ qua tin nhắn của mình
+                    if (event.publisher === myPlayerId) return; 
                     handleNetworkData(event.message);
                 }
             });
 
-            // Đăng ký vào kênh phòng cụ thể
             pubnub.subscribe({
                 channels: ['quiz_room_' + roomCode]
             });
 
-            document.getElementById('status-text').innerText = "Đã kết nối luồng mạng!";
-            document.getElementById('status-text').classList.remove('animate-pulse');
             callback();
         }
 
-        // Bấm TẠO PHÒNG
-        document.getElementById('btn-create').addEventListener('click', () => {
-            sound.click();
-            const randomCode = Math.floor(1000 + Math.random() * 9000).toString();
-            isHost = true;
-            initPubNub(randomCode, () => {
-                document.getElementById('room-code-txt').innerText = randomCode;
-                document.getElementById('room-display').classList.remove('hidden');
-                showScreen('screen-lobby');
-            });
-        });
-
-        // Bấm VÀO PHÒNG
-        document.getElementById('btn-join').addEventListener('click', () => {
+        // BẤM NÚT KẾT NỐI VÀO PHÒNG
+        document.getElementById('btn-connect').addEventListener('click', () => {
             sound.click();
             const inputVal = document.getElementById('input-room').value.trim();
-            if (inputVal.length !== 4) return alert("Vui lòng nhập đúng mã phòng có 4 con số!");
-            isHost = false;
+            if (!inputVal) return alert("Vui lòng nhập một mã phòng bất kỳ!");
+            
+            document.getElementById('status-text').innerText = "Đang kết nối cổng mạng...";
+            
             initPubNub(inputVal, () => {
-                // Gửi tín hiệu báo cho Host biết là mình đã sẵn sàng gia nhập
+                document.getElementById('lobby-room-name').innerText = inputVal;
+                showScreen('screen-lobby');
+                
+                // Gửi tín hiệu ping để xem trong phòng đã có ai chưa
                 setTimeout(() => {
-                    sendNetData({ type: 'PLAYER_JOINED' });
-                    startGame();
-                }, 600);
+                    sendNetData({ type: 'PING_ROOM', senderId: myPlayerId });
+                }, 500);
             });
         });
 
@@ -249,18 +224,24 @@
             }
         }
 
-        // Xử lý gói tin nhận từ máy bên kia
+        // Xử lý gói tin và luật chơi 2 người
         function handleNetworkData(data) {
             switch(data.type) {
-                case 'PLAYER_JOINED':
-                    if (isHost) {
-                        sendNetData({ type: 'START_GAME_SYNC' });
+                case 'PING_ROOM':
+                    // Nếu mình đang ở trong màn hình chờ và nhận được ping, chứng tỏ mình là người vào trước (Host)
+                    // Gửi phản hồi báo cho người vào sau biết để bắt đầu game luôn
+                    isHost = true;
+                    sendNetData({ type: 'HOST_ACK', hostId: myPlayerId });
+                    startGame();
+                    break;
+
+                case 'HOST_ACK':
+                    // Nếu nhận được phản hồi từ Host, mình là người thứ 2 vào phòng
+                    if (!isHost && currentQuestionIdx === 0 && answeredMe === false) {
                         startGame();
                     }
                     break;
-                case 'START_GAME_SYNC':
-                    if (!isHost) startGame();
-                    break;
+
                 case 'OP_ANSWERED':
                     answeredOp = true;
                     scoreOp = data.totalScore;
@@ -268,6 +249,7 @@
                     document.getElementById('p2-status').className = "text-[10px] text-amber-400 font-bold mt-0.5";
                     checkRoundEnd();
                     break;
+
                 case 'SYNC_NEXT_QUESTION':
                     currentQuestionIdx = data.idx;
                     loadQuestion();
@@ -379,11 +361,6 @@
                 document.getElementById('result-title').className = "text-3xl font-black text-cyan-400";
             }
         }
-
-        // Tự động kiểm tra kết nối khi mở trang
-        setTimeout(() => {
-            document.getElementById('status-text').innerText = "Hệ thống mạng PubNub đã sẵn sàng chơi!";
-        }, 1000);
     </script>
 </body>
 </html>
