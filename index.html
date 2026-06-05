@@ -531,16 +531,88 @@
 
 
 
-        function generateRandomQuestions(amount) {
-            let indexes = [];
-            while(indexes.length < amount) {
-                let r = Math.floor(Math.random() * questionBank.length);
-                if(!indexes.includes(r)) indexes.push(r);
+       // Thay thế hàm generateRandomQuestions cũ
+        function generateRandomQuestions() {
+            // 1. Lấy lịch sử các câu đã chơi từ LocalStorage (chống lặp)
+            let playedHistory = JSON.parse(localStorage.getItem('DauTruongTrieuPhu_History')) || [];
+            
+            // 2. Phân loại câu hỏi theo mức độ (lưu kèm vị trí index gốc để tạo link thách đấu)
+            let easyBank = [];
+            let mediumBank = [];
+            let hardBank = [];
+            
+            questionBank.forEach((q, index) => {
+                let qWithIndex = { ...q, originalIndex: index };
+                if (q.level === 1) easyBank.push(qWithIndex);
+                else if (q.level === 2) mediumBank.push(qWithIndex);
+                else if (q.level === 3) hardBank.push(qWithIndex);
+            });
+
+            // Hàm chọn ngẫu nhiên không lặp
+            function pickQuestions(bank, amount) {
+                // Lọc ra các câu chưa chơi
+                let unplayed = bank.filter(q => !playedHistory.includes(q.originalIndex));
+                
+                // Nếu ngân hàng câu hỏi không đủ câu mới (do người dùng đã chơi quá nhiều)
+                // -> Xóa bớt lịch sử của độ khó này để họ có thể chơi lại
+                if (unplayed.length < amount) {
+                    const bankIndices = bank.map(q => q.originalIndex);
+                    playedHistory = playedHistory.filter(id => !bankIndices.includes(id));
+                    unplayed = bank.filter(q => !playedHistory.includes(q.originalIndex)); 
+                }
+
+                let selected = [];
+                for (let i = 0; i < amount; i++) {
+                    let r = Math.floor(Math.random() * unplayed.length);
+                    let chosenQ = unplayed.splice(r, 1)[0];
+                    selected.push(chosenQ);
+                    playedHistory.push(chosenQ.originalIndex); // Đánh dấu đã chơi
+                }
+                return selected;
             }
-            activeQuestions = indexes.map(id => questionBank[id]);
-            const codeStr = indexes.join('-');
+
+            // 3. Chọn 5 Dễ, 5 Trung bình, 5 Khó
+            let part1 = pickQuestions(easyBank, 5);
+            let part2 = pickQuestions(mediumBank, 5);
+            let part3 = pickQuestions(hardBank, 5);
+
+            // Cập nhật lại LocalStorage
+            localStorage.setItem('DauTruongTrieuPhu_History', JSON.stringify(playedHistory));
+
+            // 4. Gộp lại thành 15 câu hoàn chỉnh
+            activeQuestions = [...part1, ...part2, ...part3];
+            
+            // Tạo mã thách đấu từ index
+            const codeStr = activeQuestions.map(q => q.originalIndex).join('-');
             challengeShareLink = `${window.location.origin}${window.location.pathname}?room=${codeStr}`;
         }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderMilestoneTable();
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const encodedIds = urlParams.get('room');
+
+            if (encodedIds) {
+                isChallengerMode = true;
+                document.getElementById('menu-normal-mode').classList.add('hidden');
+                document.getElementById('menu-challenge-mode').classList.remove('hidden');
+                try {
+                    const ids = encodedIds.split('-').map(id => parseInt(id));
+                    // Khi chơi thách đấu, gán lại originalIndex từ URL
+                    activeQuestions = ids.map(id => {
+                        return { ...questionBank[id], originalIndex: id };
+                    }).filter(q => q.q !== undefined);
+                } catch(e) {
+                    generateRandomQuestions();
+                }
+            } else {
+                isChallengerMode = false;
+                generateRandomQuestions(); // Bỏ tham số amount vì giờ mặc định là 15 câu phân loại
+            }
+            
+            setupHelpListeners();
+        });
 
         function showScreen(id) {
             ['screen-menu', 'screen-game', 'screen-result'].forEach(s => document.getElementById(s).classList.add('hidden'));
@@ -691,14 +763,40 @@
 
             document.getElementById('help-swap').addEventListener('click', (e) => {
                 sfx.help();
-                let newQuestion = null;
-                while(!newQuestion) {
-                    let r = Math.floor(Math.random() * questionBank.length);
-                    let candidate = questionBank[r];
-                    if(!activeQuestions.includes(candidate)) newQuestion = candidate;
+                
+                const currentQ = activeQuestions[currentIdx];
+                const targetLevel = currentQ.level;
+                let playedHistory = JSON.parse(localStorage.getItem('DauTruongTrieuPhu_History')) || [];
+                
+                // Lấy ra các chỉ số của 15 câu hiện tại để không bị bốc trúng
+                let activeIndices = activeQuestions.map(q => q.originalIndex);
+                
+                // Lọc trong questionBank các câu có cùng độ khó và không nằm trong 15 câu đang chơi
+                let candidates = questionBank
+                    .map((q, idx) => ({ ...q, originalIndex: idx }))
+                    .filter(q => q.level === targetLevel && !activeIndices.includes(q.originalIndex));
+                
+                // Ưu tiên chọn câu chưa từng chơi bao giờ
+                let unplayedCandidates = candidates.filter(q => !playedHistory.includes(q.originalIndex));
+                
+                // Nếu đã chơi hết sạch câu hỏi ở độ khó đó thì lấy tạm các câu đã chơi
+                let poolToPick = unplayedCandidates.length > 0 ? unplayedCandidates : candidates;
+                
+                if (poolToPick.length > 0) {
+                    let r = Math.floor(Math.random() * poolToPick.length);
+                    let newQuestion = poolToPick[r];
+                    
+                    // Thay thế câu hỏi hiện tại
+                    activeQuestions[currentIdx] = newQuestion;
+                    
+                    // Cập nhật lại lịch sử LocalStorage
+                    if (!playedHistory.includes(newQuestion.originalIndex)) {
+                        playedHistory.push(newQuestion.originalIndex);
+                        localStorage.setItem('DauTruongTrieuPhu_History', JSON.stringify(playedHistory));
+                    }
+                    
+                    loadQuestion();
                 }
-                activeQuestions[currentIdx] = newQuestion;
-                loadQuestion();
                 disableHelpButton(e.target);
             });
         }
