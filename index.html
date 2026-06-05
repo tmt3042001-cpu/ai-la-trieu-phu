@@ -633,6 +633,12 @@
         }
 
         function loadQuestion() {
+
+    document.getElementById('btn-ans-0').style.visibility = "visible";
+    document.getElementById('btn-ans-1').style.visibility = "visible";
+    document.getElementById('btn-ans-2').style.visibility = "visible";
+    document.getElementById('btn-ans-3').style.visibility = "visible";
+
             clearInterval(timerInterval);
             timeLeft = 30;
             document.getElementById('panel-help-display').classList.add('hidden');
@@ -701,18 +707,34 @@
         }
 
         function setupHelpListeners() {
-            document.getElementById('help-5050').addEventListener('click', (e) => {
-                sfx.help();
-                const qData = activeQuestions[currentIdx];
-                let wrongIndexes = [];
-                for(let i=0; i<4; i++) { if(i !== qData.c) wrongIndexes.push(i); }
-                wrongIndexes.sort(() => Math.random() - 0.5);
-                const btns = document.querySelectorAll('.ans-btn');
-                btns[wrongIndexes[0]].style.visibility = "hidden";
-                btns[wrongIndexes[1]].style.visibility = "hidden";
-                disableHelpButton(e.target);
-            });
+           document.getElementById('help-5050').addEventListener('click', (e) => {
+    sfx.help();
+    const qData = activeQuestions[currentIdx];
+    const correctIdx = qData.c; // Lấy vị trí đáp án đúng (0, 1, 2 hoặc 3)
+    
+    let toHide = [];
 
+    // Liệt kê thủ công các cặp đáp án sai cần ẩn dựa trên đáp án đúng
+    if (correctIdx === 0) {
+        // Đúng là A (0), ẩn 2 trong số {1, 2, 3}. Ví dụ ẩn 1 và 2.
+        toHide = [1, 2];
+    } else if (correctIdx === 1) {
+        // Đúng là B (1), ẩn 2 trong số {0, 2, 3}. Ví dụ ẩn 0 và 2.
+        toHide = [0, 2];
+    } else if (correctIdx === 2) {
+        // Đúng là C (2), ẩn 2 trong số {0, 1, 3}. Ví dụ ẩn 0 và 3.
+        toHide = [0, 3];
+    } else if (correctIdx === 3) {
+        // Đúng là D (3), ẩn 2 trong số {0, 1, 2}. Ví dụ ẩn 1 và 2.
+        toHide = [1, 2];
+    }
+
+    // Thực hiện ẩn (Không dùng vòng lặp)
+    document.getElementById('btn-ans-' + toHide[0]).style.visibility = "hidden";
+    document.getElementById('btn-ans-' + toHide[1]).style.visibility = "hidden";
+    
+    e.target.disabled = true;
+});
             document.getElementById('help-audience').addEventListener('click', (e) => {
                 sfx.help();
                 const qData = activeQuestions[currentIdx];
